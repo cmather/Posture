@@ -56,11 +56,16 @@ define(["Posture/Component"], function(Posture) {
       });
 
       describe("Children Methods", function() {
-        var component;
+        var component, config, e;
 
         beforeEach(function() {
           component = new Posture.Component();
           component.children = [];
+          config = {
+              id: "child"
+            };
+
+            e = {};
         });
 
         describe("childFactoryFrom(factory)", function() {
@@ -149,39 +154,117 @@ define(["Posture/Component"], function(Posture) {
         });
 
         describe("addChildComponent(child, options)", function() {
+
+
           describe("options.useDelegate === false", function() {
-            it ("should bind the child's 'all' event to the onChildEvent handler", function() {
-              var config = {
-                id: "child"
-              };
-
-              var e = {};
-
+            it ("should bind the child's 'all' event to the onChildEvent handler and add the child to the children queue", function() {
               spyOn(component, "onChildEvent");
-
               component.addChildComponent(config);
               expect(component.children.length).toBe(1);
               var child = component.children[0];
-
               child.trigger("click", e);
-
               expect(component.onChildEvent).toHaveBeenCalledWith(child, "click", e);
-
-
             });
           });
 
           describe("options.useDelegate === true", function() {
+            it ("should bind the child's 'all' event to the onChildEvent handler of the delegate and add the child to the delegate's children queue", function() {
+              var delegateComponent = new Posture.Component();
+              spyOn(delegateComponent, "onChildEvent");
+              component.delegates = {children: delegateComponent};
+              component.addChildComponent(config, {useDelegate: true});
+              expect(delegateComponent.children.length).toBe(1);
+              expect(component.children.length).toBe(0);
+              var child = delegateComponent.children[0];
+              child.trigger("click", e);
+              expect(delegateComponent.onChildEvent).toHaveBeenCalledWith(child, "click", e);
+            });
+          });
 
+          describe("options.index is set to a number", function() {
+            it ("should insert the child at the right index", function() {
+              var one = {id: "one"}, two = {id: "two"}, three = {id: "three"};
+
+              component.addChildComponent(one);
+              component.addChildComponent(three);
+              component.addChildComponent(two, {index: 1});
+              expect(component.children[1].config.id).toBe("two");
+            });
+          });
+
+          describe("options.render is true", function() {
+            it ("should automatically render the child at the right index if one is specified", function() {
+              var one = {id: "one"}, two = {id: "two"}, three = {id: "three"};
+              component.addChildComponent(one);
+              component.addChildComponent(three);
+              component.render();
+
+              component.addChildComponent(two, {index: 1, render: true});
+              var child = component.children[1];
+              expect(child.config.id).toBe("two");
+              expect(child.isRendered).toBe(true);
+            });
+          });
+        });
+
+        describe("processChild(child, key, options)", function() {
+          it ("should call addChildComponent and if a key is provided, add the instance as a component property", function() {
+            var options = { useDelegate: true };
+            spyOn(component, "addChildComponent").andCallThrough();
+            var result = component.processChild(config, "myChild", options);
+            expect(result instanceof Posture.Component).toBe(true);
+            expect(component.addChildComponent).toHaveBeenCalledWith(config, options);
+            expect(component.myChild).toBe(result);
           });
         });
 
         describe("processComponentChildren()", function() {
+          it ("should process each component child in the componentChildren object and set isComponentChildrenProcessed = true", function() {
+            var children = {
+              myChild: {
+                factory: Posture.Component,
+                id: "myChild"
+              }
+            };
 
+            component.componentChildren = children;
+            spyOn(component, "processChild").andCallThrough();
+            component.processComponentChildren();
+            expect(component.children.length).toBe(1);
+            expect(component.processChild).toHaveBeenCalled();
+            var args = component.processChild.calls[0].args;
+
+            expect(args[2].useDelegate).toBe(false);
+            expect(args[1]).toBe("myChild");
+            expect(args[0]).toBe(children.myChild);
+
+            expect(component.isComponentChildrenProcessed).toBe(true);
+          });
         });
 
         describe("processConfigChildren()", function() {
+          it ("should process each config child in the configChildren array and set isConfigChildrenProcessed = true", function() {
+            var children = [{
+                factory: Posture.Component,
+                id: "myChild"
+              }];
 
+            component.configChildren = children;
+
+            spyOn(component, "processChild").andCallThrough();
+            component.processConfigChildren();
+            expect(component.children.length).toBe(1);
+            expect(component.processChild).toHaveBeenCalled();
+            var args = component.processChild.calls[0].args;
+
+
+            expect(args[2].useDelegate).toBe(true);
+            expect(args[1]).toBeNull();
+            expect(args[0]).toBe(children[0]);
+
+            expect(component.isConfigChildrenProcessed).toBe(true);
+
+          });
         });
       });
 
@@ -247,14 +330,12 @@ define(["Posture/Component"], function(Posture) {
               component.createElement();
 
               expect($("#existing").length).toBe(1);
-
               expect(component.el.attributes.length).toBe(2);
               expect(component.el.attributes[0].name).toBe("id");
               expect(component.el.attributes[0].value).toBe("existing");
               expect(component.el.attributes[1].name).toBe("class");
               expect(component.el.attributes[1].value).toBe("class1 class2");
               expect(component.el.innerHTML).toBe(innerHTML);
-
             });
           });
 

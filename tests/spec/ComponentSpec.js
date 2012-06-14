@@ -44,7 +44,7 @@ define(["Posture/Component"], function(Posture) {
           });
           describe("delegate is anything else", function() {
             it("should return the specified object", function() {
-              var child = new Posture.Component();
+              var child = new Posture.Component({autoRender: false});
               component.delegates = {
                 children: child
               };
@@ -61,8 +61,7 @@ define(["Posture/Component"], function(Posture) {
         var component, config, e;
 
         beforeEach(function() {
-          component = new Posture.Component();
-          component.children = [];
+          component = new Posture.Component( { autoRender: false });
           config = {
               id: "child"
             };
@@ -283,7 +282,7 @@ define(["Posture/Component"], function(Posture) {
         var component, existing, id = "existing", classes = "class1 class2", innerHTML;
 
         beforeEach(function() {
-          component = new Posture.Component();
+          component = new Posture.Component({autoRender: false});
           existing = document.createElement("div");
           innerHTML = "<span></span>";
           existing.innerHTML = innerHTML;
@@ -722,7 +721,7 @@ define(["Posture/Component"], function(Posture) {
 
         beforeEach(function() {
           notes = [];
-          component = new Posture.Component();
+          component = new Posture.Component({autoRender: false});
           component.domEvents = domEvents;
           component.createElement();
           component.onBeforeClick = function() {

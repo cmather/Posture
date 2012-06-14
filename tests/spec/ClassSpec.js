@@ -448,15 +448,14 @@ define(["Posture/Class"], function(Posture) {
               instance = new SubClass();
               instance.classNames = ["object"];
               expect(instance.collectPrototypePropertyValues("classNames", "down")).toEqual(["first", "second", "object"]);
-            })
-          })
+            });
+          });
         });
       });
 
     });
 
   });
-
 
   return Posture;
 });

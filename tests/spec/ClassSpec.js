@@ -431,7 +431,7 @@ define(["Posture/Class"], function(Posture) {
               });
             SubClass = Class.extend({
                 classNames: ["second"],
-                style: {second: true}
+                style: {first: false, second: true, third: true}
             });
           });
 
@@ -449,6 +449,31 @@ define(["Posture/Class"], function(Posture) {
               instance.classNames = ["object"];
               expect(instance.collectPrototypePropertyValues("classNames", "down")).toEqual(["first", "second", "object"]);
             });
+          });
+        });
+
+        describe("mergePrototypePropertyValues(initial, property)", function() {
+          var SubClass;
+
+          beforeEach(function() {
+            Class = Posture.Class.create({
+                classNames: ["first"],
+                style: {first: true}
+              });
+            SubClass = Class.extend({
+                classNames: ["second"],
+                style: {first: false, second: true, third: true}
+            });
+          });
+
+          it ("should merge all prototype property values that are objects into one object and return it", function() {
+            instance = new SubClass();
+            var defaults = { defaults: true };
+            var result = instance.mergePrototypePropertyValues(defaults, "style");
+            expect(typeof result).toBe("object");
+            expect(result.first).toBe(false);
+            expect(result.second).toBe(true);
+            expect(result.third).toBe(true);
           });
         });
       });

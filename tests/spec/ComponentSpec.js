@@ -53,6 +53,8 @@ define(["Posture/Component"], function(Posture) {
             });
           });
         });
+
+
       });
 
       describe("Children Methods", function() {
@@ -264,6 +266,15 @@ define(["Posture/Component"], function(Posture) {
 
             expect(component.isConfigChildrenProcessed).toBe(true);
 
+          });
+        });
+
+        describe("appendChild(element)", function() {
+          it ("should append the element to the component's or the children delegate's el", function() {
+            var element = document.createElement("div");
+            component.createElement();
+            component.appendChild(element);
+            expect(component.$("div").length).toBe(1);
           });
         });
       });

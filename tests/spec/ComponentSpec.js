@@ -17,13 +17,181 @@ define(["Posture/Component"], function(Posture) {
 
     describe("Instance Methods", function() {
 
+      describe("Utility Methods", function() {
+        describe("delegateFor(key)", function() {
+          var component, delegates;
+
+          beforeEach(function() {
+            component = new Posture.Component();
+          });
+
+          describe("delegate doesn't exist", function() {
+            it("should return the component", function() {
+              var result = component.delegateFor("children");
+              expect(result).toBe(component);
+            });
+          });
+          describe("delegate is a function", function() {
+            it("should return the result of the function", function() {
+              component.delegates = {
+                children: function() {
+                  return "result";
+                }
+              };
+              var result = component.delegateFor("children");
+              expect(result).toBe("result");
+            });
+          });
+          describe("delegate is anything else", function() {
+            it("should return the specified object", function() {
+              var child = new Posture.Component();
+              component.delegates = {
+                children: child
+              };
+              var result = component.delegateFor("children");
+              expect(result).toBe(child);
+            });
+          });
+        });
+      });
+
+      describe("Children Methods", function() {
+        var component;
+
+        beforeEach(function() {
+          component = new Posture.Component();
+          component.children = [];
+        });
+
+        describe("childFactoryFrom(factory)", function() {
+          describe("factory is a string", function() {
+            it ("should return the property value (provided its a Posture.Component) on the component whose name is the factory parameter", function() {
+              component.childFactory = Posture.Component;
+              expect(component.childFactoryFrom("childFactory")).toBe(component.childFactory);
+            });
+          });
+
+          describe("factory is a function that is of type Posture.Component", function() {
+            it ("should return the component", function() {
+              var fn = Posture.Component;
+              expect(component.childFactoryFrom(fn)).toBe(fn);
+
+              var fn2 = Posture.Component.extend();
+              expect(component.childFactoryFrom(fn2)).toBe(fn2);
+            });
+          });
+
+          describe("factory is something else", function() {
+            it ("should throw an exception", function() {
+              expect(function() { component.childFactoryFrom(null); }).toThrow();
+            });
+          });
+        });
+
+        describe("childComponentFrom(child, parent)", function() {
+          describe("child is an instance of Posture.Component", function() {
+            it("should configure the instance by extending the existing config with the childDefaults and a container", function() {
+              component.childDefaults = {
+                autoRender: false
+              };
+              component.createElement();
+
+              var child = new Posture.Component();
+              spyOn(child, "configure");
+              var result = component.childComponentFrom(child);
+              expect(result).toBe(child);
+              expect(child.configure).toHaveBeenCalled();
+              var config = child.configure.calls[0].args[0];
+              expect(config.autoRender).toBe(false);
+              expect(config.container).toBe(component.el);
+            });
+          });
+
+          describe("child is config object", function() {
+            it("should create a new instance by calling childFactoryFrom and using the config.factory and passing the config merged with childDefaults into the constructor", function() {
+              component.createElement();
+              component.childDefaults = {
+                factory: Posture.Component,
+                autoRender: false
+              };
+
+              var config = { id: 5 };
+
+              var result = component.childComponentFrom(config);
+
+              expect(result instanceof Posture.Component).toBe(true);
+              expect(result.config.factory).toBeUndefined();
+              expect(result.config.autoRender).toBe(false);
+              expect(result.config.container).toBe(component.el);
+              expect(result.config.id).toBe(5);
+            });
+          });
+
+          describe("parent is a child component", function() {
+            it("should set the container to the specified parent", function() {
+              component.createElement();
+              component.childDefaults = {
+                factory: Posture.Component,
+                autoRender: false
+              };
+
+              var parent = new Posture.Component();
+              parent.createElement();
+
+              var config = { id: 5 };
+
+              var result = component.childComponentFrom(config, parent);
+
+              expect(result.config.factory).toBeUndefined();
+              expect(result.config.container).toBe(parent.el);
+            });
+          });
+        });
+
+        describe("addChildComponent(child, options)", function() {
+          describe("options.useDelegate === false", function() {
+            it ("should bind the child's 'all' event to the onChildEvent handler", function() {
+              var config = {
+                id: "child"
+              };
+
+              var e = {};
+
+              spyOn(component, "onChildEvent");
+
+              component.addChildComponent(config);
+              expect(component.children.length).toBe(1);
+              var child = component.children[0];
+
+              child.trigger("click", e);
+
+              expect(component.onChildEvent).toHaveBeenCalledWith(child, "click", e);
+
+
+            });
+          });
+
+          describe("options.useDelegate === true", function() {
+
+          });
+        });
+
+        describe("processComponentChildren()", function() {
+
+        });
+
+        describe("processConfigChildren()", function() {
+
+        });
+      });
+
       describe("Rendering Methods", function() {
         var component, existing, id = "existing", classes = "class1 class2", innerHTML;
 
         beforeEach(function() {
           component = new Posture.Component();
           existing = document.createElement("div");
-          innerHTML = "<span></span>"
+          innerHTML = "<span></span>";
           existing.innerHTML = innerHTML;
           existing.setAttribute("id", id);
           existing.setAttribute("class", classes);
@@ -34,7 +202,7 @@ define(["Posture/Component"], function(Posture) {
           try {
             $("#existing").remove();
             $(component.el).remove();
-          } 
+          }
           catch(e) {
 
           }
@@ -95,6 +263,58 @@ define(["Posture/Component"], function(Posture) {
               component.el = $("#existing");
               component.createElement();
               expect(component.el.id).toEqual(existing.id);
+            });
+          });
+
+          describe("el property is set to an element", function() {
+            it ("should set the element to the existing element in the dom", function() {
+              component.el = existing;
+              component.createElement();
+              expect(component.el.id).toEqual(existing.id);
+            });
+          });
+
+          describe("innerHTML", function() {
+            describe("template function exists", function() {
+              it("should call the template function with a default context of the component itself", function() {
+                component.template = function(context) {
+                  return "template";
+                };
+                spyOn(component, "template").andCallThrough();
+                spyOn(component, "applyTemplate").andCallThrough();
+                spyOn(component, "getTemplateContext").andCallThrough();
+                component.createElement();
+                expect(component.template).toHaveBeenCalledWith(component);
+                expect(component.el.innerHTML).toBe("template");
+                expect(component.applyTemplate).toHaveBeenCalled();
+                expect(component.getTemplateContext).toHaveBeenCalled();
+              });
+            });
+
+            describe("no template function but initialHtml is a non empty string", function() {
+              it("should set the component's innerHTML to the value of initialHtml", function() {
+                component.initialHtml = "initial";
+                component.createElement();
+                expect(component.el.innerHTML).toBe("initial");
+              });
+            });
+
+            describe("no template function and no initialHtml", function() {
+              it("should leave the current element's html in place", function() {
+                component.el = $(existing);
+                component.createElement();
+                expect(component.el.innerHTML).toBe(innerHTML);
+              });
+            });
+
+            describe("existing html", function() {
+              it ("should be saved to the savedInnerHTML property on the component", function() {
+                component.el = existing;
+                component.initialHtml = "initial";
+                component.createElement();
+                expect(component.el.innerHTML).toBe("initial");
+                expect(component.savedInnerHTML).toBe(innerHTML);
+              });
             });
           });
         });
@@ -258,12 +478,12 @@ define(["Posture/Component"], function(Posture) {
               component.id = "cmp";
               component.createElement();
               component.applyId();
-              component.insert();            
+              component.insert();
               $el = $("#cmp");
 
               expect($el.length).toBe(1);
               expect( _.toArray(document.body.childNodes).indexOf(component.el) ).toBe(document.body.childNodes.length - 1);
-              expect(component.isInserted).toBe(true);          
+              expect(component.isInserted).toBe(true);
             });
           });
 
@@ -273,7 +493,7 @@ define(["Posture/Component"], function(Posture) {
               component.id = "cmp";
               component.createElement();
               component.applyId();
-              component.insert(existing);            
+              component.insert(existing);
               $el = $("#cmp");
 
               expect($el.length).toBe(1);
@@ -288,7 +508,7 @@ define(["Posture/Component"], function(Posture) {
               component.id = "cmp";
               component.createElement();
               component.applyId();
-              component.insert(existing, 0);      
+              component.insert(existing, 0);
               $el = $("#cmp");
               expect($el.length).toBe(1);
               expect( _.toArray(existing.childNodes).indexOf(component.el) ).toBe(0);
@@ -312,6 +532,94 @@ define(["Posture/Component"], function(Posture) {
 
           });
         });
+
+        describe("renderChild(child, method, index)", function() {
+          it("should call the render method of the child passing the current component's element as the container parameter", function() {
+            var child = {
+              render: function render(container, method, index) {}
+            };
+            spyOn(child, "render");
+
+            component.createElement();
+            component.renderChild(child, "append");
+
+            expect(child.render).toHaveBeenCalledWith(component.el, "append", undefined);
+
+          });
+        });
+
+        describe("renderChildren()", function() {
+          it("should call the render method of each child passing the component's element as the container parameter", function() {
+            var one = {
+              render: function render(container, method, index) {}
+            };
+            var two = {
+              render: function render(container, method, index) {}
+            };
+            spyOn(one, "render");
+            spyOn(two, "render");
+
+            component.children = [one, two];
+            component.createElement();
+            component.renderChildren();
+
+            expect(one.render).toHaveBeenCalledWith(component.el, "append", undefined);
+            expect(two.render).toHaveBeenCalledWith(component.el, "append", undefined);
+
+          });
+        });
+
+        describe("render(container, method, index)", function() {
+          beforeEach(function() {
+            spyOn(component, "createElement").andCallThrough();
+            spyOn(component, "applyId").andCallThrough();
+            spyOn(component, "applyClasses").andCallThrough();
+            spyOn(component, "applyStyle").andCallThrough();
+            spyOn(component, "applyAttributes").andCallThrough();
+            spyOn(component, "bindDomEvents").andCallThrough();
+            spyOn(component, "renderChildren").andCallThrough();
+            spyOn(component, "append").andCallThrough();
+            spyOn(component, "insert").andCallThrough();
+          });
+
+          describe("render()", function() {
+            it("should execute the rendering pipeline, append the component element to document.body and return the component", function() {
+
+              var ret = component.render();
+
+              expect(ret).toBe(component);
+              expect(component.createElement).toHaveBeenCalled();
+              expect(component.applyId).toHaveBeenCalled();
+              expect(component.applyClasses).toHaveBeenCalled();
+              expect(component.applyStyle).toHaveBeenCalled();
+              expect(component.applyAttributes).toHaveBeenCalled();
+              expect(component.bindDomEvents).toHaveBeenCalled();
+              expect(component.renderChildren).toHaveBeenCalled();
+              expect(component.append).toHaveBeenCalledWith(undefined, undefined);
+            });
+          });
+
+          describe("render(container)", function() {
+            it("should execute the rendering pipeline, call append with the container, and return the component", function() {
+              var ret = component.render(existing);
+              expect(component.append).toHaveBeenCalledWith(existing, undefined);
+            });
+          });
+
+          describe("render(container, 'insert')", function() {
+            it("should execute the rendering pipeline, call insert with the container and return the component", function() {
+              var ret = component.render(existing, "insert");
+              expect(component.insert).toHaveBeenCalledWith(existing, undefined);
+            });
+          });
+
+          describe("render(container, method, index)", function() {
+            it("should execute the rendering pipeline, call insert with the container and index, and return the component", function() {
+              var ret = component.render(existing, "insert", 5);
+              expect(component.insert).toHaveBeenCalledWith(existing, 5);
+            });
+          });
+        });
       });
 
       describe("Dom Event Methods", function() {
@@ -325,11 +633,10 @@ define(["Posture/Component"], function(Posture) {
           component = new Posture.Component();
           component.domEvents = domEvents;
           component.createElement();
-          component._notes = [];
           component.onBeforeClick = function() {
-            notes.push("onBeforeClick")
+            notes.push("onBeforeClick");
           };
-          component.onAfterClick = function() { notes.push("onAfterClick")};
+          component.onAfterClick = function() { notes.push("onAfterClick"); };
           handlers = {
             onClick: function() {
               notes.push("onClick");
@@ -345,7 +652,7 @@ define(["Posture/Component"], function(Posture) {
           try {
             $(component.el).remove();
             component = null;
-          } 
+          }
           catch(e) {
 
           }
@@ -359,7 +666,7 @@ define(["Posture/Component"], function(Posture) {
           });
 
           it ("should bind the element's event to the component's onDomEvent handler", function() {
-            var e = {}
+            var e = {};
             component.onDomEvent = function() {};
 
             spyOn(component, "onDomEvent");

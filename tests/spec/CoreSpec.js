@@ -76,6 +76,16 @@ define(["Posture/Core"], function(Posture) {
       });
 
     });
+
+    describe("defaultValue(source, defaultValue)", function() {
+      it("should return the default value if the property does not exist on the source", function() {
+        expect(_.defaultValue(undefined, false)).toBe(false);
+        expect(_.defaultValue(false, true)).toBe(false);
+        expect(_.defaultValue(true, false)).toBe(true);
+        expect(_.defaultValue(null, false)).toBe(false);
+        expect(_.defaultValue(undefined, true)).toBe(true);
+      });
+    });
   });
 
 });

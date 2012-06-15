@@ -72,6 +72,7 @@ DEPENDENCIES
   compass
   guard-rake
   jasmine
+  rake
   sinatra
   thin
   uglifier

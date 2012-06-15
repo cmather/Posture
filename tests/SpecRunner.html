@@ -11,7 +11,7 @@
   <script src="src/lib/vendor/jquery.js"></script>
   <script src="lib/require.js"></script>
 
-  
+
   <script>
     require.config({
       paths: {
@@ -22,17 +22,16 @@
     });
 
     require ([
-      // "Posture/Core", 
-      // "spec/CoreSpec", 
+      //"spec/CoreSpec",
       //"spec/ClassSpec"
       "spec/ComponentSpec"
-       
+
     ], function(Posture) {
       window.Posture = Posture;
     });
-    
+
   </script>
-  
+
 
   <script type="text/javascript">
     (function() {

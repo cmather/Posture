@@ -1,11 +1,37 @@
 define(["Posture/Component"], function(Posture) {
-  var Component = Posture.Component;
+  var Component = Posture.Component, component, oldConfigure, existing, classes;
+
+
+
   describe("Posture.Component", function() {
+    oldConfigure = Posture.Component.prototype.configure;
+    Posture.Component.prototype.configure = function() {};
+    Posture.Component.prototype.defaults.autoRender = false;
+
+    beforeEach(function() {
+      component = new Posture.Component();
+      component.children = [];
+      existing = document.createElement("div");
+      innerHTML = "<span></span>";
+      existing.innerHTML = innerHTML;
+      id = "existing";
+      classes = "class1 class2";
+      existing.setAttribute("id", id);
+      existing.setAttribute("class", classes);
+      document.body.appendChild(existing);
+    });
+
+    afterEach(function() {
+      try {
+        $("#existing").remove();
+        $(component.el).remove();
+        component = null;
+      }
+      catch(e) {
+      }
+    });
 
     describe("Class Methods", function() {
-      describe("constructor(config)", function() {
-
-      });
 
       describe("uniqueId()", function() {
         it ("should return an incremented id each time it is called", function() {
@@ -16,14 +42,290 @@ define(["Posture/Component"], function(Posture) {
     });
 
     describe("Instance Methods", function() {
+      describe("initialize(config)", function() {
+        it("should call the configure(config) method", function() {
+          spyOn(Posture.Component.prototype, "configure");
+          var config = {};
+          var cmp = new Posture.Component(config);
+          expect(Posture.Component.prototype.configure).toHaveBeenCalledWith(config);
+        });
+
+        it("should call render() if this.autoRender is true, which it is by default", function() {
+          spyOn(Posture.Component.prototype, "render");
+          Posture.Component.prototype.autoRender = true;
+          var cmp = new Posture.Component();
+          expect(Posture.Component.prototype.render).toHaveBeenCalled();
+        });
+      });
+
+      describe("Configuration", function() {
+        var Super, ChildA, ChildB;
+
+        beforeEach(function() {
+          Posture.Component.prototype.configure = oldConfigure;
+
+          /* we want to have control over the configure method directly
+              so we need to stop initialize from calling it */
+          Posture.Component.prototype.initialize = function() {};
+
+          spyOn(Posture.Component.prototype, "processComponentChildren");
+          spyOn(Posture.Component.prototype, "processConfigChildren");
+
+          Super = Posture.Component.extend({
+            defaults: {
+              superC: true,
+              classNames: ["super"]
+            },
+            children: {
+              superPanel: { name: "superPanel" }
+            },
+            attributes: {
+              superAttribute: true
+            },
+            style: {
+              superStyle: true
+            },
+            classNames: ["super"]
+          });
+          ChildA = Super.extend({
+            defaults: {
+              childA: true,
+              classNames: ["childa"]
+            },
+            children: {
+              childAPanel: { name: "childAPanel" }
+            },
+            attributes: {
+              childAAttribute: true
+            },
+            style: {
+              childAStyle: true
+            },
+            classNames: ["childA"]
+          });
+          ChildB = ChildA.extend({
+            defaults: {
+              childB: true,
+              classNames: ["childb"]
+            },
+            children: {
+              childBPanel: { name: "childBPanel" }
+            },
+            attributes: {
+              childBAttribute: true
+            },
+            style: {
+              childBStyle: true
+            },
+            classNames: ["childB"]
+          });
+
+          component = new ChildB();
+
+        });
+
+        describe("configure(config)", function() {
+          describe("this.defaults", function() {
+            it ("should create a defaults object property on the component", function() {
+              component.configure();
+              expect(component.hasOwnProperty("defaults")).toBe(true);
+            });
+
+            it ("should merge defaults from ancestor components", function() {
+              component.configure();
+              expect(component.defaults.classNames).toEqual(["childb"]);
+              expect(component.defaults.superC).toBe(true);
+              expect(component.defaults.childA).toBe(true);
+              expect(component.defaults.childB).toBe(true);
+            });
+          });
+
+          describe("this.componentChildren", function() {
+            it ("should merge children from all ancestors", function() {
+              component.configure();
+              var children = [], i, len;
+
+              _.forOwn(component.componentChildren, function(child) {
+                children.push(child.name);
+              });
+
+              expect(children).toEqual(["superPanel", "childAPanel", "childBPanel"]);
+            });
+          });
+
+          describe("this.configChildren", function() {
+            it ("should be equal to config.children if provided", function() {
+              var config = {
+                children: []
+              };
+              component.configure(config);
+              expect(component.configChildren).toBe(config.children);
+            });
+
+            it ("should default to defaults.children if no config.children provided", function() {
+              component.configure();
+              expect(component.configChildren).toBe(component.defaults.children);
+            });
+          });
+
+          describe("this.children", function() {
+            it ("should be an empty array", function() {
+              component.configure();
+              expect(component.children.length).toBe(0);
+            });
+          });
+
+          describe("this.autoRender", function() {
+            it ("should be equal to config.autoRender if provided or defaults.autoRender if not", function() {
+              var config = {
+                autoRender: "bogus"
+              };
+              component.configure(config);
+              expect(component.autoRender).toBe("bogus");
+
+              component.defaults.autoRender = "defaults";
+              component.configure();
+              expect(component.autoRender).toBe("defaults");
+            });
+          });
+
+          describe("this.initialHtml", function() {
+            it ("should be equal to config.html if provided or defaults.html if not", function() {
+              var config = {
+                html: "bogus"
+              };
+              component.configure(config);
+              expect(component.initialHtml).toBe("bogus");
+
+              component.defaults.html = "defaults";
+              component.configure();
+              expect(component.initialHtml).toBe("defaults");
+            });
+          });
+
+          describe("this.attributes", function() {
+            it ("should merge attributes from all ancestors starting with config.attributes", function() {
+              var config = {
+                attributes: {
+                  configAttribute: true
+                }
+              };
+
+              component.configure(config);
+
+              expect(component.attributes.configAttribute).toBe(true);
+              expect(component.attributes.superAttribute).toBe(true);
+              expect(component.attributes.childAAttribute).toBe(true);
+              expect(component.attributes.childBAttribute).toBe(true);
+            });
+          });
+
+          describe("this.style", function() {
+            it ("should merge style from all ancestors starting with config.style", function() {
+              var config = {
+                style: {
+                  configStyle: true
+                }
+              };
+
+              component.configure(config);
+              expect(component.style.configStyle).toBe(true);
+              expect(component.style.superStyle).toBe(true);
+              expect(component.style.childAStyle).toBe(true);
+              expect(component.style.childBStyle).toBe(true);
+            });
+          });
+
+          describe("this.classNames", function() {
+            it ("should be an array of all ancestor classNames and then the config.classNames", function() {
+              var config = {
+                classNames: ["config"]
+              };
+
+              component.configure(config);
+              expect(component.classNames).toEqual(["component", "super", "childA", "childB", "config"]);
+            });
+          });
+
+          describe("this.el", function() {
+            it ("should be config.el or defaults.el or null if none is provided", function() {
+              var config = { el: "config" };
+              component.configure(config);
+              expect(component.el).toBe(config.el);
+
+              component.defaults.el = "default";
+              component.configure();
+              expect(component.el).toBe("default");
+
+              component.defaults.el = undefined;
+              component.configure();
+              expect(component.el).toBeNull();
+            });
+          });
+
+          describe("this.container", function() {
+            it ("should be config.container or defaults.container or null if none is provided", function() {
+              var config = { container: "config" };
+              component.configure(config);
+              expect(component.container).toBe(config.container);
+
+              component.defaults.container = "default";
+              component.configure();
+              expect(component.container).toBe("default");
+
+              component.defaults.container = undefined;
+              component.configure();
+              expect(component.container).toBeNull();
+            });
+          });
+
+          describe("Includes", function() {
+            it ("should mixin any objects in the Includes config array", function() {
+              var one = {
+                methodOne: function() {},
+                initialize: function() {}
+              };
+              var two = {
+                methodTwo: function() {},
+                initialize: function() {}
+              };
+              spyOn(one, "initialize");
+              spyOn(two, "initialize");
+
+              var config = {
+                Includes: [one, two]
+              };
+
+              component.configure(config);
+              expect(component.methodOne).toBeDefined();
+              expect(component.methodTwo).toBeDefined();
+              expect(one.initialize).toHaveBeenCalled();
+              expect(two.initialize).toHaveBeenCalled();
+
+            });
+          });
+
+          describe("processComponentChildren and processConfigChildren", function() {
+            it ("should call processComponentChildren and processConfigChildren", function() {
+              component.configure();
+              expect(component.processComponentChildren).toHaveBeenCalled();
+              expect(component.processConfigChildren).toHaveBeenCalled();
+            });
+          });
+
+          describe("return value", function() {
+            it ("should return the component (this)", function() {
+              var res = component.configure();
+              expect(res).toBe(component);
+            })
+          })
+
+        });
+      });
 
       describe("Utility Methods", function() {
-        describe("delegateFor(key)", function() {
-          var component, delegates;
 
-          beforeEach(function() {
-            component = new Posture.Component();
-          });
+        describe("delegateFor(key)", function() {
 
           describe("delegate doesn't exist", function() {
             it("should return the component", function() {
@@ -31,6 +333,7 @@ define(["Posture/Component"], function(Posture) {
               expect(result).toBe(component);
             });
           });
+
           describe("delegate is a function", function() {
             it("should return the result of the function", function() {
               component.delegates = {
@@ -42,9 +345,10 @@ define(["Posture/Component"], function(Posture) {
               expect(result).toBe("result");
             });
           });
+
           describe("delegate is anything else", function() {
             it("should return the specified object", function() {
-              var child = new Posture.Component({autoRender: false});
+              var child = new Posture.Component();
               component.delegates = {
                 children: child
               };
@@ -53,23 +357,21 @@ define(["Posture/Component"], function(Posture) {
             });
           });
         });
-
-
       });
 
       describe("Children Methods", function() {
-        var component, config, e;
+        var config, e;
 
         beforeEach(function() {
-          component = new Posture.Component( { autoRender: false });
           config = {
-              id: "child"
-            };
+            id: "child"
+          };
 
-            e = {};
+          e = {};
         });
 
         describe("childFactoryFrom(factory)", function() {
+
           describe("factory is a string", function() {
             it ("should return the property value (provided its a Posture.Component) on the component whose name is the factory parameter", function() {
               component.childFactory = Posture.Component;
@@ -92,9 +394,11 @@ define(["Posture/Component"], function(Posture) {
               expect(function() { component.childFactoryFrom(null); }).toThrow();
             });
           });
+
         });
 
         describe("childComponentFrom(child, parent)", function() {
+
           describe("child is an instance of Posture.Component", function() {
             it("should configure the instance by extending the existing config with the childDefaults and a container", function() {
               component.childDefaults = {
@@ -102,7 +406,7 @@ define(["Posture/Component"], function(Posture) {
               };
               component.createElement();
 
-              var child = new Posture.Component();
+              var child = new Posture.Component({autoRender: false});
               spyOn(child, "configure");
               var result = component.childComponentFrom(child);
               expect(result).toBe(child);
@@ -123,13 +427,18 @@ define(["Posture/Component"], function(Posture) {
 
               var config = { id: 5 };
 
+              spyOn(component, "childFactoryFrom").andCallThrough();
+              spyOn(Posture.Component.prototype, "initialize");
+
               var result = component.childComponentFrom(config);
+              var initializeArgs = Posture.Component.prototype.initialize.calls[0].args[0];
 
               expect(result instanceof Posture.Component).toBe(true);
-              expect(result.config.factory).toBeUndefined();
-              expect(result.config.autoRender).toBe(false);
-              expect(result.config.container).toBe(component.el);
-              expect(result.config.id).toBe(5);
+              expect(component.childFactoryFrom).toHaveBeenCalledWith(component.childDefaults.factory);
+              expect(initializeArgs.container).toBe(component.el);
+              expect(initializeArgs.autoRender).toBe(false);
+              expect(initializeArgs.id).toBe(5);
+              expect(initializeArgs.factory).toBeUndefined();
             });
           });
 
@@ -142,20 +451,30 @@ define(["Posture/Component"], function(Posture) {
               };
 
               var parent = new Posture.Component();
+
+              parent.childDefaults = {
+                factory: Posture.Component,
+                autoRender: false
+              };
+
               parent.createElement();
 
               var config = { id: 5 };
 
-              var result = component.childComponentFrom(config, parent);
+              spyOn(parent, "childFactoryFrom").andCallThrough();
+              spyOn(Posture.Component.prototype, "initialize");
 
-              expect(result.config.factory).toBeUndefined();
-              expect(result.config.container).toBe(parent.el);
+              var result = component.childComponentFrom(config, parent);
+              var newComponentArgs = Posture.Component.prototype.initialize.calls[0].args[0];
+              expect(result instanceof Posture.Component).toBe(true);
+              expect(parent.childFactoryFrom).toHaveBeenCalledWith(component.childDefaults.factory);
+              expect(newComponentArgs.container).toBe(parent.el);
             });
           });
+
         });
 
         describe("addChildComponent(child, options)", function() {
-
 
           describe("options.useDelegate === false", function() {
             it ("should bind the child's 'all' event to the onChildEvent handler and add the child to the children queue", function() {
@@ -171,6 +490,7 @@ define(["Posture/Component"], function(Posture) {
           describe("options.useDelegate === true", function() {
             it ("should bind the child's 'all' event to the onChildEvent handler of the delegate and add the child to the delegate's children queue", function() {
               var delegateComponent = new Posture.Component();
+              delegateComponent.children = [];
               spyOn(delegateComponent, "onChildEvent");
               component.delegates = {children: delegateComponent};
               component.addChildComponent(config, {useDelegate: true});
@@ -185,6 +505,10 @@ define(["Posture/Component"], function(Posture) {
           describe("options.index is set to a number", function() {
             it ("should insert the child at the right index", function() {
               var one = {id: "one"}, two = {id: "two"}, three = {id: "three"};
+
+              Posture.Component.prototype.initialize = function(config) {
+                this.config = config;
+              };
 
               component.addChildComponent(one);
               component.addChildComponent(three);
@@ -206,6 +530,7 @@ define(["Posture/Component"], function(Posture) {
               expect(child.isRendered).toBe(true);
             });
           });
+
         });
 
         describe("processChild(child, key, options)", function() {
@@ -246,9 +571,9 @@ define(["Posture/Component"], function(Posture) {
         describe("processConfigChildren()", function() {
           it ("should process each config child in the configChildren array and set isConfigChildrenProcessed = true", function() {
             var children = [{
-                factory: Posture.Component,
-                id: "myChild"
-              }];
+              factory: Posture.Component,
+              id: "myChild"
+            }];
 
             component.configChildren = children;
 
@@ -279,27 +604,6 @@ define(["Posture/Component"], function(Posture) {
       });
 
       describe("Rendering Methods", function() {
-        var component, existing, id = "existing", classes = "class1 class2", innerHTML;
-
-        beforeEach(function() {
-          component = new Posture.Component({autoRender: false});
-          existing = document.createElement("div");
-          innerHTML = "<span></span>";
-          existing.innerHTML = innerHTML;
-          existing.setAttribute("id", id);
-          existing.setAttribute("class", classes);
-          document.body.appendChild(existing);
-        });
-
-        afterEach(function() {
-          try {
-            $("#existing").remove();
-            $(component.el).remove();
-          }
-          catch(e) {
-
-          }
-        });
 
         describe("createElement()", function() {
 
@@ -313,7 +617,6 @@ define(["Posture/Component"], function(Posture) {
           });
 
           describe("el property is set to a jQuery selector string and the dom element is found", function() {
-
             it ("should set the element to the existing element in the dom", function() {
               component.el = "#existing";
               component.createElement();
@@ -322,7 +625,6 @@ define(["Posture/Component"], function(Posture) {
               expect(component.el.innerHTML).toEqual(existing.innerHTML);
               expect(component.el.style).toEqual(existing.style);
             });
-
           });
 
           describe("el property is set to a jQuery selector string and the dom element is not found", function() {
@@ -633,9 +935,7 @@ define(["Posture/Component"], function(Posture) {
 
             component.createElement();
             component.renderChild(child, "append");
-
             expect(child.render).toHaveBeenCalledWith(component.el, "append", undefined);
-
           });
         });
 
@@ -715,13 +1015,11 @@ define(["Posture/Component"], function(Posture) {
 
       describe("Dom Event Methods", function() {
         var domEvents = ["click"],
-        component,
         handlers,
         notes;
 
         beforeEach(function() {
           notes = [];
-          component = new Posture.Component({autoRender: false});
           component.domEvents = domEvents;
           component.createElement();
           component.onBeforeClick = function() {
@@ -737,16 +1035,6 @@ define(["Posture/Component"], function(Posture) {
           spyOn(component, "onBeforeClick").andCallThrough();
           spyOn(component, "onAfterClick").andCallThrough();
           component.append();
-        });
-
-        afterEach(function() {
-          try {
-            $(component.el).remove();
-            component = null;
-          }
-          catch(e) {
-
-          }
         });
 
         describe("bindDomEvents()", function() {
@@ -770,8 +1058,6 @@ define(["Posture/Component"], function(Posture) {
             expect(component.onDomEvent.calls[0].args[0]).toBe("click");
             expect(typeof component.onDomEvent.calls[0].args[1]).toBe("object");
           });
-
-
         });
 
         describe("onDomEvent(name, e)", function() {
@@ -788,7 +1074,6 @@ define(["Posture/Component"], function(Posture) {
         });
       });
     });
-
   });
 
   return Posture;

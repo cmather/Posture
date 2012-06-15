@@ -272,10 +272,16 @@ define(["Posture/Class"], function(Posture) {
 
           it("should include mixins from ancestor classes first", function() {
             var ancestorMixin = {
-
+              initialize: function() {
+                this.notes = this.notes || [];
+                this.notes.push("ancestor");
+              }
             };
             var childMixin = {
-
+              initialize: function() {
+                this.notes = this.notes || [];
+                this.notes.push("child");
+              }
             };
 
             var Parent = Posture.Class.create({
@@ -283,11 +289,19 @@ define(["Posture/Class"], function(Posture) {
             });
 
             var Child = Parent.extend({
-              Includes: [childMixin]
+              Includes: [childMixin],
+              initialize: function() {
+                this.notes = this.notes || [];
+                this.notes.push("init");
+              }
             });
 
-            //expect(Child._meta.includes.length).toBe(2);
-            //expect(Child._meta.includes).toEqual([ancestorMixin, childMixin]);
+            expect(Child._meta.includes.length).toBe(2);
+            expect(Child._meta.includes).toEqual([ancestorMixin, childMixin]);
+
+            var inst = new Child();
+
+            expect(inst.notes).toEqual(["ancestor", "child", "init"]);
 
           });
         });

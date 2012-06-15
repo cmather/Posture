@@ -67,7 +67,19 @@ define(["Posture/Class"], function(Posture) {
             var Class = new Posture.Class();
             expect(typeof Class._meta).toBe("object");
           });
-        })
+        });
+
+        describe("ancestors()", function() {
+          it("should return an array of the super classes starting at the top of the chain and working down", function() {
+            var Super, ChildA, ChildB;
+
+            Super = new Posture.Class();
+            ChildA = Super.extend();
+            ChildB = ChildA.extend();
+
+            expect(ChildB.ancestors()).toEqual([Super, ChildA]);
+          });
+        });
       });
 
       describe("Class Definition Special Properties", function() {
@@ -196,7 +208,7 @@ define(["Posture/Class"], function(Posture) {
             expect(Class.prototype.objectMethod).toBe(objectMixin.objectMethod);
           });
 
-          it("should also extend the class instance prototype with a constructor function prototype", function() {
+          it("should also extend the class instance prototype with a function mixin by using the function's prototype", function() {
             classDefinition = {
               Includes: [functionMixin],
               initialize: function initialize() {}
@@ -256,6 +268,27 @@ define(["Posture/Class"], function(Posture) {
             Class = Posture.Class.create(classDefinition);
 
             expect(Class.prototype.onObjectMethod).toBe(classDefinition.onObjectMethod);
+          });
+
+          it("should include mixins from ancestor classes first", function() {
+            var ancestorMixin = {
+
+            };
+            var childMixin = {
+
+            };
+
+            var Parent = Posture.Class.create({
+              Includes: [ancestorMixin]
+            });
+
+            var Child = Parent.extend({
+              Includes: [childMixin]
+            });
+
+            //expect(Child._meta.includes.length).toBe(2);
+            //expect(Child._meta.includes).toEqual([ancestorMixin, childMixin]);
+
           });
         });
 

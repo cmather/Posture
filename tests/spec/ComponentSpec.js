@@ -547,19 +547,6 @@ define(["Posture/Component"], function(Posture) {
             });
           });
 
-          describe("options.render is true", function() {
-            it ("should automatically render the child at the right index if one is specified", function() {
-              var one = {id: "one"}, two = {id: "two"}, three = {id: "three"};
-              component.addChild(one);
-              component.addChild(three);
-              component.render();
-
-              component.addChild(two, {index: 1, render: true});
-              var child = component.children[1];
-              expect(child.config.id).toBe("two");
-              expect(child.isRendered).toBe(true);
-            });
-          });
 
         });
 
@@ -568,6 +555,7 @@ define(["Posture/Component"], function(Posture) {
             var options = { useDelegate: true };
             spyOn(component, "addChild").andCallThrough();
             var result = component.processChild(config, "myChild", options);
+            expect(config.autoRender).toBe(false);
             expect(result instanceof Posture.Component).toBe(true);
             expect(component.addChild).toHaveBeenCalledWith(config, options);
             expect(component.myChild).toBe(result);

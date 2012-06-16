@@ -68,8 +68,7 @@ define(["Posture/Component"], function(Posture) {
               so we need to stop initialize from calling it */
           Posture.Component.prototype.initialize = function() {};
 
-          spyOn(Posture.Component.prototype, "processComponentChildren");
-          spyOn(Posture.Component.prototype, "processConfigChildren");
+          spyOn(Posture.Component.prototype, "processChildren");
 
           Super = Posture.Component.extend({
             defaults: {
@@ -305,11 +304,10 @@ define(["Posture/Component"], function(Posture) {
             });
           });
 
-          describe("processComponentChildren and processConfigChildren", function() {
-            it ("should call processComponentChildren and processConfigChildren", function() {
+          describe("processChildren", function() {
+            it ("should call processChildren", function() {
               component.configure();
-              expect(component.processComponentChildren).toHaveBeenCalled();
-              expect(component.processConfigChildren).toHaveBeenCalled();
+              expect(component.processChildren).toHaveBeenCalled();
             });
           });
 
@@ -317,8 +315,8 @@ define(["Posture/Component"], function(Posture) {
             it ("should return the component (this)", function() {
               var res = component.configure();
               expect(res).toBe(component);
-            })
-          })
+            });
+          });
 
         });
       });
@@ -368,6 +366,23 @@ define(["Posture/Component"], function(Posture) {
           };
 
           e = {};
+        });
+
+        describe("addChild(child, index)", function() {
+          it ("should append or insert the child into the children queue for rendering. This method should not be called directly but can be hooked into.", function() {
+            var one = {one: true};
+            var two = {two: true};
+
+            component.addChild(one);
+            expect(component.children.length).toBe(1);
+            expect(component.children[0]).toBe(one);
+
+            component.addChild(two, 0);
+            expect(component.children.length).toBe(2);
+            expect(component.children[0]).toBe(two);
+            expect(component.children[1]).toBe(one);
+
+          });
         });
 
         describe("childFactoryFrom(factory)", function() {
@@ -610,9 +625,17 @@ define(["Posture/Component"], function(Posture) {
           describe("no el property on the component", function() {
             it ("should create a new element and set the el and $el properties of the component", function() {
               component.tagName = "table";
+              component.el = null;
               component.createElement();
               expect(_.isElement(component.el)).toBe(true);
               expect(component.$el.length).toBeDefined();
+
+              component.el = undefined;
+              component.createElement();
+              expect(_.isElement(component.el)).toBe(true);
+              expect(component.$el.length).toBeDefined();
+
+
             });
           });
 

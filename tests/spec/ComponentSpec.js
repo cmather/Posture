@@ -517,6 +517,21 @@ define(["Posture/Component"], function(Posture) {
             });
           });
 
+          describe("options.useDelegate is undefined", function() {
+            it ("should default to using the children delegate", function() {
+              var delegateComponent = new Posture.Component();
+              delegateComponent.children = [];
+              spyOn(delegateComponent, "onChildEvent");
+              component.delegates = {children: delegateComponent};
+              component.addChild(config);
+              expect(delegateComponent.children.length).toBe(1);
+              expect(component.children.length).toBe(0);
+              var child = delegateComponent.children[0];
+              child.trigger("click", e);
+              expect(delegateComponent.onChildEvent).toHaveBeenCalledWith(child, "click", e);
+            });
+          });
+
           describe("options.index is set to a number", function() {
             it ("should insert the child at the right index", function() {
               var one = {id: "one"}, two = {id: "two"}, three = {id: "three"};

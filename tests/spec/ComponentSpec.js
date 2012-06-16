@@ -952,26 +952,26 @@ define(["Posture/Component"], function(Posture) {
           });
         });
 
-        describe("renderChild(child, method, index)", function() {
+        describe("renderChild(child, index)", function() {
           it("should call the render method of the child passing the current component's element as the container parameter", function() {
             var child = {
-              render: function render(container, method, index) {}
+              render: function render(container, index) {}
             };
             spyOn(child, "render");
 
             component.createElement();
-            component.renderChild(child, "append");
-            expect(child.render).toHaveBeenCalledWith(component.el, "append", undefined);
+            component.renderChild(child);
+            expect(child.render).toHaveBeenCalledWith(component.el, undefined);
           });
         });
 
         describe("renderChildren()", function() {
           it("should call the render method of each child passing the component's element as the container parameter", function() {
             var one = {
-              render: function render(container, method, index) {}
+              render: function render(container, index) {}
             };
             var two = {
-              render: function render(container, method, index) {}
+              render: function render(container, index) {}
             };
             spyOn(one, "render");
             spyOn(two, "render");
@@ -980,13 +980,13 @@ define(["Posture/Component"], function(Posture) {
             component.createElement();
             component.renderChildren();
 
-            expect(one.render).toHaveBeenCalledWith(component.el, "append", undefined);
-            expect(two.render).toHaveBeenCalledWith(component.el, "append", undefined);
+            expect(one.render).toHaveBeenCalledWith(component.el, undefined);
+            expect(two.render).toHaveBeenCalledWith(component.el, undefined);
 
           });
         });
 
-        describe("render(container, method, index)", function() {
+        describe("render(container, index)", function() {
           beforeEach(function() {
             spyOn(component, "createElement").andCallThrough();
             spyOn(component, "applyId").andCallThrough();
@@ -1023,16 +1023,9 @@ define(["Posture/Component"], function(Posture) {
             });
           });
 
-          describe("render(container, 'insert')", function() {
-            it("should execute the rendering pipeline, call insert with the container and return the component", function() {
-              var ret = component.render(existing, "insert");
-              expect(component.insert).toHaveBeenCalledWith(existing, undefined);
-            });
-          });
-
-          describe("render(container, method, index)", function() {
+          describe("render(container, index)", function() {
             it("should execute the rendering pipeline, call insert with the container and index, and return the component", function() {
-              var ret = component.render(existing, "insert", 5);
+              var ret = component.render(existing, 5);
               expect(component.insert).toHaveBeenCalledWith(existing, 5);
             });
           });

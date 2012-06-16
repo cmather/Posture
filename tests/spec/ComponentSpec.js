@@ -368,16 +368,16 @@ define(["Posture/Component"], function(Posture) {
           e = {};
         });
 
-        describe("addChild(child, index)", function() {
+        describe("addChildToRenderQueue(child, index)", function() {
           it ("should append or insert the child into the children queue for rendering. This method should not be called directly but can be hooked into.", function() {
             var one = {one: true};
             var two = {two: true};
 
-            component.addChild(one);
+            component.addChildToRenderQueue(one);
             expect(component.children.length).toBe(1);
             expect(component.children[0]).toBe(one);
 
-            component.addChild(two, 0);
+            component.addChildToRenderQueue(two, 0);
             expect(component.children.length).toBe(2);
             expect(component.children[0]).toBe(two);
             expect(component.children[1]).toBe(one);
@@ -489,12 +489,12 @@ define(["Posture/Component"], function(Posture) {
 
         });
 
-        describe("addChildComponent(child, options)", function() {
+        describe("addChild(child, options)", function() {
 
           describe("options.useDelegate === false", function() {
             it ("should bind the child's 'all' event to the onChildEvent handler and add the child to the children queue", function() {
               spyOn(component, "onChildEvent");
-              component.addChildComponent(config);
+              component.addChild(config);
               expect(component.children.length).toBe(1);
               var child = component.children[0];
               child.trigger("click", e);
@@ -508,7 +508,7 @@ define(["Posture/Component"], function(Posture) {
               delegateComponent.children = [];
               spyOn(delegateComponent, "onChildEvent");
               component.delegates = {children: delegateComponent};
-              component.addChildComponent(config, {useDelegate: true});
+              component.addChild(config, {useDelegate: true});
               expect(delegateComponent.children.length).toBe(1);
               expect(component.children.length).toBe(0);
               var child = delegateComponent.children[0];
@@ -525,9 +525,9 @@ define(["Posture/Component"], function(Posture) {
                 this.config = config;
               };
 
-              component.addChildComponent(one);
-              component.addChildComponent(three);
-              component.addChildComponent(two, {index: 1});
+              component.addChild(one);
+              component.addChild(three);
+              component.addChild(two, {index: 1});
               expect(component.children[1].config.id).toBe("two");
             });
           });
@@ -535,11 +535,11 @@ define(["Posture/Component"], function(Posture) {
           describe("options.render is true", function() {
             it ("should automatically render the child at the right index if one is specified", function() {
               var one = {id: "one"}, two = {id: "two"}, three = {id: "three"};
-              component.addChildComponent(one);
-              component.addChildComponent(three);
+              component.addChild(one);
+              component.addChild(three);
               component.render();
 
-              component.addChildComponent(two, {index: 1, render: true});
+              component.addChild(two, {index: 1, render: true});
               var child = component.children[1];
               expect(child.config.id).toBe("two");
               expect(child.isRendered).toBe(true);
@@ -549,12 +549,12 @@ define(["Posture/Component"], function(Posture) {
         });
 
         describe("processChild(child, key, options)", function() {
-          it ("should call addChildComponent and if a key is provided, add the instance as a component property", function() {
+          it ("should call addChild and if a key is provided, add the instance as a component property", function() {
             var options = { useDelegate: true };
-            spyOn(component, "addChildComponent").andCallThrough();
+            spyOn(component, "addChild").andCallThrough();
             var result = component.processChild(config, "myChild", options);
             expect(result instanceof Posture.Component).toBe(true);
-            expect(component.addChildComponent).toHaveBeenCalledWith(config, options);
+            expect(component.addChild).toHaveBeenCalledWith(config, options);
             expect(component.myChild).toBe(result);
           });
         });

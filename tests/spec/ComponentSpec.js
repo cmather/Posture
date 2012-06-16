@@ -1090,8 +1090,8 @@ define(["Posture/Component"], function(Posture) {
             component.on("click", handlers.onClick);
             component.onDomEvent("click", e);
             expect(notes.toString()).toBe("onBeforeClick,onClick,onAfterClick");
-            expect(component.onBeforeClick).toHaveBeenCalledWith(e, component);
-            expect(component.onAfterClick).toHaveBeenCalledWith(e, component);
+            expect(component.onBeforeClick).toHaveBeenCalledWith(e, component, component);
+            expect(component.onAfterClick).toHaveBeenCalledWith(e, component, component);
             expect(handlers.onClick).toHaveBeenCalledWith(e, component);
           });
         });

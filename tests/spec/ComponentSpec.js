@@ -368,16 +368,16 @@ define(["Posture/Component"], function(Posture) {
           e = {};
         });
 
-        describe("addChildToRenderQueue(child, index)", function() {
+        describe("addChildToRenderQueue(child)", function() {
           it ("should append or insert the child into the children queue for rendering. This method should not be called directly but can be hooked into.", function() {
             var one = {one: true};
-            var two = {two: true};
+            var two = {two: true, index: 0};
 
             component.addChildToRenderQueue(one);
             expect(component.children.length).toBe(1);
             expect(component.children[0]).toBe(one);
 
-            component.addChildToRenderQueue(two, 0);
+            component.addChildToRenderQueue(two);
             expect(component.children.length).toBe(2);
             expect(component.children[0]).toBe(two);
             expect(component.children[1]).toBe(one);
@@ -532,17 +532,26 @@ define(["Posture/Component"], function(Posture) {
             });
           });
 
-          describe("options.index is set to a number", function() {
-            it ("should insert the child at the right index", function() {
-              var one = {id: "one"}, two = {id: "two"}, three = {id: "three"};
+          describe("child.index is set to a number", function() {
+            var oldInit = Posture.Component.prototype.initialize;
 
+            beforeEach(function() {
               Posture.Component.prototype.initialize = function(config) {
                 this.config = config;
+                this.index = config && config.index;
               };
+            });
+
+            afterEach(function() {
+              Posture.Component.prototype.initialize = oldInit;
+            });
+
+            it ("should insert the child at the right index", function() {
+              var one = {id: "one"}, two = {id: "two", index: 1}, three = {id: "three"};
 
               component.addChild(one);
               component.addChild(three);
-              component.addChild(two, {index: 1});
+              component.addChild(two);
               expect(component.children[1].config.id).toBe("two");
             });
           });
@@ -1012,14 +1021,14 @@ define(["Posture/Component"], function(Posture) {
               expect(component.applyAttributes).toHaveBeenCalled();
               expect(component.bindDomEvents).toHaveBeenCalled();
               expect(component.renderChildren).toHaveBeenCalled();
-              expect(component.append).toHaveBeenCalledWith(undefined, undefined);
+              expect(component.append).toHaveBeenCalledWith(null, null);
             });
           });
 
           describe("render(container)", function() {
             it("should execute the rendering pipeline, call append with the container, and return the component", function() {
               var ret = component.render(existing);
-              expect(component.append).toHaveBeenCalledWith(existing, undefined);
+              expect(component.append).toHaveBeenCalledWith(existing, null);
             });
           });
 

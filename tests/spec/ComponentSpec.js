@@ -56,6 +56,12 @@ define(["Posture/Component"], function(Posture) {
           var cmp = new Posture.Component();
           expect(Posture.Component.prototype.render).toHaveBeenCalled();
         });
+
+        it ("should call processChildren", function() {
+          spyOn(Posture.Component.prototype, "processChildren");
+          var cmp = new Posture.Component();
+          expect(cmp.processChildren).toHaveBeenCalled();
+        });
       });
 
       describe("Configuration", function() {
@@ -304,12 +310,16 @@ define(["Posture/Component"], function(Posture) {
             });
           });
 
-          describe("processChildren", function() {
-            it ("should call processChildren", function() {
+          describe("this.id", function() {
+            it ("should be config.id or null", function() {
               component.configure();
-              expect(component.processChildren).toHaveBeenCalled();
+              expect(component.id).toBeNull();
+
+              component.configure({id: 1});
+              expect(component.id).toBe(1);
             });
           });
+
 
           describe("return value", function() {
             it ("should return the component (this)", function() {

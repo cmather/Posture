@@ -25,11 +25,9 @@ define(["Posture/Core"], function(Posture) {
         expect(ns.namespace).toBe(namespace);
         expect(ns.type).toBe("Button");
 
-        expect(context.Posture).toBeDefined();
-        expect(context.Posture.elements).toBeDefined();
-        expect(context.Posture.elements.Button).toBeDefined();
+        expect(context.elements).toBeDefined();
+        expect(context.elements.Button).toBeDefined();
 
-        expect(context.Posture.__proto__).toBeNull();
       });
     });
 

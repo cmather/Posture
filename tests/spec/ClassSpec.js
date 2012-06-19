@@ -94,7 +94,7 @@ define(["Posture/Class"], function(Posture) {
           });
 
           it("should create a namespace on the given context", function() {
-            expect(typeof context.Bogus.Component).toBe("function");
+            expect(typeof context.Component).toBe("function");
           });
 
           it("should create a namespace on window if no context is given", function() {

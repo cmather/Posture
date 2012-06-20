@@ -1,11 +1,6 @@
 Posture.js
 =============================
 
-##Introduction
-
-Posture.js is a JavaScript framework for building user interface components and organizing any Web application
-JavaScript, not just for single page apps. The framework is built using a combination of namespacing and
-requirejs modules. Includes the lodash utility library.
 
 ##Getting Started
 * Ruby, RubyGems and Bundler are needed for automatically installing developer dependencies.

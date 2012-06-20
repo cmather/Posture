@@ -42,6 +42,10 @@ You extend Posture.Component to create custom reusable components like this:
 
       attributes: {},
 
+      defaults: {
+        html: "Hello World!"
+      },
+
       childDefaults: {
         factory: Posture.Component
       },
@@ -59,5 +63,43 @@ You extend Posture.Component to create custom reusable components like this:
 
         }
       }
-
     });
+
+All of the major methods in Posture.Component are decorated with a hook wrapper. This means they will all automatically fire begin and after events, and call onBefore and onAfter methods if they exist on the component instance object. For example, you can hook into the rendering process in an extended component like this:
+
+    Posture.Component.extend({
+      Name: "App.Panel",
+
+      onAfterInitialize: function onAfterInitialize() {
+        /* You can bind to events on major component methods */
+
+        this.on("beforeRender", _.bind(this.onPreRender, this));
+        this.on("afterRender", _.bind(this.onAfterRender, this));
+      },
+
+      /* or just override the hook methods */
+
+      onBeforeRender: function onBeforeRender() {
+        /* called before the render(...) method is applied */
+      },
+
+      onAfterRender: function onAfterRender() {
+        /* called after the render(...) method is applied */
+      }
+    });
+
+###Configurability
+
+You create new instances of the component and configure it like this:
+
+    var instance = new App.Panel({
+      html: "Some html",
+      classNames: ["additional class"],
+      style: { border: "1px solid #000" }
+    });
+
+Components are automatically rendered unless autoRender is set to false.
+
+
+
+

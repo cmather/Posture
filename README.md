@@ -29,6 +29,8 @@ You extend Posture.Component to create custom reusable components like this:
 
       Name: "App.Panel",
 
+      Includes: [],
+
       tagName: "div",
 
       classNames: ["panel"],

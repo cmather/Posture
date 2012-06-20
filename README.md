@@ -51,17 +51,11 @@ You extend Posture.Component to create custom reusable components like this:
       },
 
       children: {
-        header: {
+        header: {},
 
-        },
+        content: {},
 
-        content: {
-
-        },
-
-        footer: {
-
-        }
+        footer: {}
       }
     });
 

@@ -16,9 +16,48 @@ requirejs modules. Includes the lodash utility library.
 ##Main Modules
 
 * __Core__: Includes the main `Posture` namespace.
-* __Class__: `Posture.Class` provides a class functionality including namespacing, mixins (with mixin hooks), and inheritance.
-* __EventPublisher__: `Posture.behaviors.EventPublisher` provides a publish/subscribe standalone class or mixin.
-* __Component__: `Posture.Component` provides a base class for building reusable user interface components. It has mechanisms for clearly handling component configurability and component inheritance.
+* __Posture.Class__: `Posture.Class` provides a class functionality including namespacing, mixins (with mixin hooks), and inheritance.
+* __Posture.behaviors.EventPublisher__: `Posture.behaviors.EventPublisher` provides a publish/subscribe standalone class or mixin.
+* __Posture.Component__: `Posture.Component` provides a base class for building reusable user interface components. It has mechanisms for clearly handling component configurability and component inheritance.
 
-_More documentation to come soon._
+##Posture.Component
 
+###Overview
+
+Posture.Component is the base class for creating reusable user interface components. It has all of the logic for rendering, extending and configuring components.
+
+###Extensibility
+
+You extend Posture.Component to create custom reusable components like this:
+
+    Posture.Component.extend({
+
+      Name: "App.Panel",
+
+      tagName: "div",
+
+      classNames: ["panel"],
+
+      style: {},
+
+      attributes: {},
+
+      childDefaults: {
+        factory: Posture.Component
+      },
+
+      children: {
+        header: {
+
+        },
+
+        content: {
+
+        },
+
+        footer: {
+
+        }
+      }
+
+    });
